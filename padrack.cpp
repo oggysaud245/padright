@@ -3,16 +3,19 @@
 int padrack:: getQuantity(){
     return quantity;
 }
-int padrack:: setQuantity(int number){
+void padrack:: setQuantity(int number){
     quantity = number;
 }
-int padrack:: decQuantity(){
+void padrack:: decQuantity(){
     if(quantity != 0){
         quantity--;
     }
 }
 void padrack:: setZero(){
-     if(quantity = 0){
+     if(quantity != 0){
         quantity = 0;
     }
+}
+void padrack:: incQuantity(){
+    quantity++;
 }

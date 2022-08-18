@@ -12,12 +12,12 @@ byte menuButton = 3;
 byte selectButton = 4;
 byte okButton = 5;
 
-int settingVariable = 0;
+int motorTimeVariable = 5;
 uint32_t previousTime = millis();
 int topMenuPosition = 0;
 int state = 0;
 bool makeChange = false;
-String status = "Null";
+char status = 'n';
 byte arrow[8] = {
     0b00000,
     0b11100,
@@ -40,31 +40,64 @@ void setup()
 }
 void loop()
 {
-    if (!digitalRead(menuButton))
+    if (status == 'n')
     {
-        delay(300);
-        state++;
-        if (state == 2)
-            state = 0;
-        makeChange = true;
+        if (!digitalRead(menuButton))
+        {
+            delay(300);
+            state++;
+            if (state == 2)
+                state = 0;
+            makeChange = true;
+        }
+        else if (!digitalRead(selectButton))
+        {
+            delay(300);
+            topMenuPosition++;
+            if (topMenuPosition == 2)
+                topMenuPosition = 0;
+            makeChange = true;
+        }
+        if (!digitalRead(okButton) && state == 1)
+        {
+            delay(300);
+            if (state == 1 && topMenuPosition == 0)
+                status = 'r';
+            else if (state == 1 && topMenuPosition == 1)
+                status = 'm';
+            Serial.println(status);
+            switch (status)
+            {
+            case 'm':
+                motorTime();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        motorTimeVariable = motorTimeVariable + 5;
+                        motorTime();
+                    }
+                }
+                save();
+                break;
+            case 'r':
+                manageRack1();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        rack1.incQuantity();
+                        manageRack1();
+                    }
+                }
+                save();
+                break;
+            }
+        }
     }
-    if (!digitalRead(selectButton))
-    {
-        delay(300);
-        topMenuPosition++;
-        if (topMenuPosition == 2)
-            topMenuPosition = 0;
-        makeChange = true;
-    }
-    if (!digitalRead(okButton))
-    {
-        delay(300);
-        if (state == 1 && topMenuPosition == 0)
-            status = "r";
-        else if(state == 1 && topMenuPosition == 1)
-        status = "m";
-        Serial.println(status);
-    }
+
     menu();
     makeChange = false;
 }
@@ -151,51 +184,46 @@ void manageRack1()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Rack 1  Quantity");
+    lcd.print("Rack1  Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    lcd.print(settingVariable);
-    lcd.blink();
+    lcd.print(rack1.getQuantity());
 }
 void manageRack2()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Rack 2 Quantity");
+    lcd.print("Rack2 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    lcd.print(settingVariable);
-    lcd.blink();
+    // lcd.print(settingVariable);
 }
 void manageRack3()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Rack 3 Quantity");
+    lcd.print("Rack3 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    lcd.print(settingVariable);
-    lcd.blink();
+    // lcd.print(settingVariable);
 }
 void manageRack4()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Rack 4 Quantity");
+    lcd.print("Rack4 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    lcd.print(settingVariable);
-    lcd.blink();
+    // lcd.print(settingVariable);
 }
 void manageRack5()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Rack 5 Quantity");
+    lcd.print("Rack5 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    lcd.print(settingVariable);
-    lcd.blink();
+    // lcd.print(settingVariable);
 }
 void motorTime()
 {
@@ -204,10 +232,14 @@ void motorTime()
     lcd.print("Motor Time");
     lcd.setCursor(0, 1);
     // enter number
-    lcd.print(settingVariable);
-    lcd.blink();
+    lcd.print(motorTimeVariable);
 }
-void incVariable()
+void save()
 {
-    settingVariable++;
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Saving...");
+    delay(2000);
+    status = 'n';
+    state = 0;
 }

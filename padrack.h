@@ -5,8 +5,9 @@ class padrack{
     int quantity;
     public:
     int getQuantity();
-    int setQuantity(int number);
-    int decQuantity();
+    void setQuantity(int number);
+    void decQuantity();
+    void incQuantity();
     void setZero();
 
 };
