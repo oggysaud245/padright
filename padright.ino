@@ -5,18 +5,17 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 padrack rack1, rack2, rack3, rack4, rack5;
-OneButton menuButton(3, true, true);
-OneButton selectButton(4, true, true);
-OneButton incButton(5, true, true);
 
 bool change = false;
 bool isUpdate = false;
+byte menuButton = 3;
+byte selectButton = 4;
 
 int settingVariable = 0;
 uint32_t previousTime = millis();
-int currentMenuPosition = 0;
-int currentMenu = 0;
-
+int topMenuPosition = 0;
+int state = 0;
+bool makeChange = false;
 byte arrow[8] = {
     0b00000,
     0b11100,
@@ -33,16 +32,29 @@ void setup()
     lcd.init(); // initialize the lcd
     lcd.backlight();
     lcd.createChar(0, arrow);
-    incButton.attachClick(incVariable);
-    // selectButton.attachClick(select);
-    menuButton.attachClick(menu);
-    menuButton.attachLongPressStart(toggleMenu);
+    pinMode(menuButton, INPUT_PULLUP);
+    pinMode(selectButton, INPUT_PULLUP);
 }
 void loop()
 {
-    menuButton.tick();
-    selectButton.tick();
-    homePage();
+    if (!digitalRead(menuButton))
+    {
+        delay(300);
+        state++;
+        if (state == 2)
+            state = 0;
+        makeChange = true;
+    }
+    if (!digitalRead(selectButton))
+    {
+        delay(300);
+        topMenuPosition++;
+        if (topMenuPosition == 2)
+            topMenuPosition = 0;
+        makeChange = true;
+    }
+    menu();
+    makeChange = false;
 }
 
 void homePage()
@@ -86,38 +98,38 @@ void homePage()
 }
 void topMenu()
 {
-    lcd.clear();
-    lcd.setCursor(3, 0);
-    lcd.print("Rack Quantity");
-    lcd.setCursor(3, 1);
-    lcd.print("Motor Time");
-    switch (currentMenu)
+    switch (topMenuPosition)
     {
     case 0:
+        lcd.clear();
         lcd.setCursor(0, 0);
         lcd.write((byte)0);
+        lcd.setCursor(3, 0);
+        lcd.print("Rack Quantity");
+        lcd.setCursor(3, 1);
+        lcd.print("Motor Time");
         break;
     case 1:
+        lcd.clear();
+        lcd.setCursor(3, 0);
+        lcd.print("Rack Quantity");
         lcd.setCursor(0, 1);
         lcd.write((byte)0);
-        break;
-    case 3:
-        currentMenu = 0;
+        lcd.setCursor(3, 1);
+        lcd.print("Motor Time");
         break;
     }
 }
 void menu()
 {
-    switch (currentMenuPosition)
+    switch (state)
     {
     case 0:
         homePage();
-        currentMenu = 0;
         break;
-
     case 1:
-        topMenu();
-        currentMenu = 1;
+        if (makeChange)
+            topMenu();
         break;
     }
 }
@@ -184,21 +196,4 @@ void motorTime()
 void incVariable()
 {
     settingVariable++;
-}
-
-void toggleMenu()
-{
-    currentMenuPosition++;
-    if (currentMenuPosition == 3)
-        currentMenuPosition = 0;
-    menu();
-}
-
-void gotoHome()
-{
-    currentMenuPosition = 0;
-}
-void select()
-{
-    // selection++;
 }
