@@ -10,12 +10,14 @@ bool change = false;
 bool isUpdate = false;
 byte menuButton = 3;
 byte selectButton = 4;
+byte okButton = 5;
 
 int settingVariable = 0;
 uint32_t previousTime = millis();
 int topMenuPosition = 0;
 int state = 0;
 bool makeChange = false;
+String status = "Null";
 byte arrow[8] = {
     0b00000,
     0b11100,
@@ -34,6 +36,7 @@ void setup()
     lcd.createChar(0, arrow);
     pinMode(menuButton, INPUT_PULLUP);
     pinMode(selectButton, INPUT_PULLUP);
+    pinMode(okButton, INPUT_PULLUP);
 }
 void loop()
 {
@@ -52,6 +55,15 @@ void loop()
         if (topMenuPosition == 2)
             topMenuPosition = 0;
         makeChange = true;
+    }
+    if (!digitalRead(okButton))
+    {
+        delay(300);
+        if (state == 1 && topMenuPosition == 0)
+            status = "r";
+        else if(state == 1 && topMenuPosition == 1)
+        status = "m";
+        Serial.println(status);
     }
     menu();
     makeChange = false;
@@ -126,10 +138,12 @@ void menu()
     {
     case 0:
         homePage();
+        topMenuPosition = 0;
         break;
     case 1:
         if (makeChange)
             topMenu();
+        isUpdate = false;
         break;
     }
 }
