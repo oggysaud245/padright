@@ -25,7 +25,7 @@ void padrack::setZero()
 void padrack::incQuantity()
 {
     quantity++;
-    if (quantity == 61)
+    if (quantity > 60)
     {
         setQuantity(0);
     }

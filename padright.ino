@@ -2,7 +2,15 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "OneButton.h"
-
+#include <EEPROM.h>
+// ADDRESS FOR VARIABLES
+static byte rack1Address = 1;
+static byte rack2Address = 2;
+static byte rack3Address = 3;
+static byte rack4Address = 4;
+static byte rack5Address = 5;
+static byte motorTimeAddress = 10;
+//---------------------------------
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 padrack rack1, rack2, rack3, rack4, rack5;
 
@@ -11,8 +19,9 @@ bool isUpdate = false;
 byte menuButton = 3;
 byte selectButton = 4;
 byte okButton = 5;
+byte buzzer = 7;
 
-int motorTimeVariable = 5;
+int motorTimeVariable = 100;
 uint32_t previousTime = millis();
 int topMenuPosition = 0;
 int state = 0;
@@ -37,6 +46,9 @@ void setup()
     pinMode(menuButton, INPUT_PULLUP);
     pinMode(selectButton, INPUT_PULLUP);
     pinMode(okButton, INPUT_PULLUP);
+    pinMode(buzzer, OUTPUT);
+    digitalWrite(buzzer, LOW);
+    readFromEEPROM();
 }
 void loop()
 {
@@ -75,10 +87,13 @@ void loop()
                     if (!digitalRead(selectButton))
                     {
                         delay(300);
-                        motorTimeVariable = motorTimeVariable + 5;
+                        motorTimeVariable = motorTimeVariable + 100;
+                        if (motorTimeVariable > 5000)
+                            motorTimeVariable = 100;
                         motorTime();
                     }
                 }
+                writeToEPPROM(state);
                 save();
                 break;
             case 'r':
@@ -92,7 +107,6 @@ void loop()
                         manageRack1();
                     }
                 }
-                save();
                 manageRack2();
                 while (digitalRead(okButton))
                 {
@@ -103,7 +117,6 @@ void loop()
                         manageRack2();
                     }
                 }
-                save();
                 manageRack3();
                 while (digitalRead(okButton))
                 {
@@ -114,7 +127,6 @@ void loop()
                         manageRack3();
                     }
                 }
-                save();
                 manageRack4();
                 while (digitalRead(okButton))
                 {
@@ -125,7 +137,6 @@ void loop()
                         manageRack4();
                     }
                 }
-                save();
                 manageRack5();
                 while (digitalRead(okButton))
                 {
@@ -136,6 +147,7 @@ void loop()
                         manageRack5();
                     }
                 }
+                writeToEPPROM(state);
                 save();
                 break;
             }
@@ -273,7 +285,7 @@ void motorTime()
 {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Motor Time");
+    lcd.print("Motor Time (ms)");
     lcd.setCursor(0, 1);
     // enter number
     lcd.print(motorTimeVariable);
@@ -283,7 +295,46 @@ void save()
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Saving...");
+    digitalWrite(buzzer, HIGH);
     delay(2000);
+    digitalWrite(buzzer, LOW);
     status = 'n';
     state = 0;
+}
+void writeToEPPROM(char state)
+{
+
+    if (state == 'r')
+    {
+        EEPROM.write(rack1Address, rack1.getQuantity());
+        EEPROM.write(rack2Address, rack2.getQuantity());
+        EEPROM.write(rack3Address, rack3.getQuantity());
+        EEPROM.write(rack4Address, rack4.getQuantity());
+        EEPROM.write(rack5Address, rack5.getQuantity());
+    }
+    else if (state = 'm')
+    {
+        writeIntIntoEEPROM(motorTimeAddress, motorTimeVariable);
+    }
+}
+void readFromEEPROM()
+{
+    motorTimeVariable = readIntFromEEPROM(motorTimeAddress);
+    if (motorTimeVariable == -1)
+        motorTimeVariable = 0;
+    rack1.setQuantity(EEPROM.read(rack1Address));
+    rack2.setQuantity(EEPROM.read(rack2Address));
+    rack3.setQuantity(EEPROM.read(rack3Address));
+    rack4.setQuantity(EEPROM.read(rack4Address));
+    rack5.setQuantity(EEPROM.read(rack5Address));
+}
+
+void writeIntIntoEEPROM(int address, int number)
+{
+    EEPROM.write(address, number >> 8);
+    EEPROM.write(address + 1, number & 0xFF);
+}
+int readIntFromEEPROM(int address)
+{
+    return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
 }
