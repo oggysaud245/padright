@@ -93,6 +93,50 @@ void loop()
                     }
                 }
                 save();
+                manageRack2();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        rack2.incQuantity();
+                        manageRack2();
+                    }
+                }
+                save();
+                manageRack3();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        rack3.incQuantity();
+                        manageRack3();
+                    }
+                }
+                save();
+                manageRack4();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        rack4.incQuantity();
+                        manageRack4();
+                    }
+                }
+                save();
+                manageRack5();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        rack5.incQuantity();
+                        manageRack5();
+                    }
+                }
+                save();
                 break;
             }
         }
@@ -196,7 +240,7 @@ void manageRack2()
     lcd.print("Rack2 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    // lcd.print(settingVariable);
+    lcd.print(rack2.getQuantity());
 }
 void manageRack3()
 {
@@ -205,7 +249,7 @@ void manageRack3()
     lcd.print("Rack3 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    // lcd.print(settingVariable);
+    lcd.print(rack3.getQuantity());
 }
 void manageRack4()
 {
@@ -214,7 +258,7 @@ void manageRack4()
     lcd.print("Rack4 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    // lcd.print(settingVariable);
+    lcd.print(rack4.getQuantity());
 }
 void manageRack5()
 {
@@ -223,7 +267,7 @@ void manageRack5()
     lcd.print("Rack5 Quantity");
     lcd.setCursor(0, 1);
     // enter number
-    // lcd.print(settingVariable);
+    lcd.print(rack5.getQuantity());
 }
 void motorTime()
 {

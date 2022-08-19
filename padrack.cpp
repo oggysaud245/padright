@@ -1,21 +1,32 @@
 #include "padrack.h"
 
-int padrack:: getQuantity(){
+int padrack::getQuantity()
+{
     return quantity;
 }
-void padrack:: setQuantity(int number){
+void padrack::setQuantity(int number)
+{
     quantity = number;
 }
-void padrack:: decQuantity(){
-    if(quantity != 0){
+void padrack::decQuantity()
+{
+    if (quantity != 0)
+    {
         quantity--;
     }
 }
-void padrack:: setZero(){
-     if(quantity != 0){
+void padrack::setZero()
+{
+    if (quantity != 0)
+    {
         quantity = 0;
     }
 }
-void padrack:: incQuantity(){
+void padrack::incQuantity()
+{
     quantity++;
+    if (quantity == 61)
+    {
+        setQuantity(0);
+    }
 }
