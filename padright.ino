@@ -1,9 +1,25 @@
 #include "padrack.h"
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include "OneButton.h"
 #include <EEPROM.h>
-// ADDRESS FOR VARIABLES
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define RST_PIN 9 // Configurable, see typical pin layout above
+#define SS_PIN 10 // Configurable, see typical pin layout above
+
+MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
+
+MFRC522::MIFARE_Key key;
+MFRC522::StatusCode rfidstatus;
+// regarding rdid card
+int blockAddr = 2;
+byte readByte[18];
+byte writeByte[16];
+int authAddr = 3;
+byte byteSize = sizeof(readByte);
+//
+// ADDRESS FOR menu VARIABLES
 static byte rack1Address = 1;
 static byte rack2Address = 2;
 static byte rack3Address = 3;
@@ -11,6 +27,7 @@ static byte rack4Address = 4;
 static byte rack5Address = 5;
 static byte motorTimeAddress = 10;
 //---------------------------------
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 padrack rack1, rack2, rack3, rack4, rack5;
 
@@ -43,18 +60,107 @@ void setup()
     lcd.init(); // initialize the lcd
     lcd.backlight();
     lcd.createChar(0, arrow);
+    SPI.begin();        // Init SPI bus
+    mfrc522.PCD_Init(); // Init MFRC522 card
     pinMode(menuButton, INPUT_PULLUP);
     pinMode(selectButton, INPUT_PULLUP);
     pinMode(okButton, INPUT_PULLUP);
     pinMode(buzzer, OUTPUT);
     digitalWrite(buzzer, LOW);
     readFromEEPROM();
+
+    // key for auth rfid
+    for (byte i = 0; i < 6; i++)
+    {
+        key.keyByte[i] = 0xFF;
+    }
+    startMessage();
+}
+void startMessage()
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Powered By ");
+    lcd.setCursor(0, 1);
+    lcd.print("Kaicho Group");
+    delay(3000);
+     lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("RED");
+    lcd.setCursor(3, 1);
+    lcd.print("INT'L");
+    delay(5000);
 }
 void loop()
 {
     menuManagement();
+    manageRFID();
 }
-
+void manageRFID()
+{
+    if (mfrc522.PICC_IsNewCardPresent())
+    {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Card Detected!");
+        lcd.setCursor(0, 1);
+        lcd.print("Please Wait.....");
+        if (mfrc522.PICC_ReadCardSerial())
+        {
+            if (readCard())
+            {
+                if (readByte[15] != 0 && readByte[0] == 107)
+                {
+                    dumpToWriteVar(readByte, 16);
+                    if (!writeCard())
+                    {
+                        lcd.clear();
+                        lcd.setCursor(0, 0);
+                        lcd.print("Failed!");
+                        lcd.setCursor(0, 1);
+                        lcd.print("Try Again");
+                        delay(3000);
+                    }
+                    else
+                    {
+                        delay(500);
+                        lcd.clear();
+                        lcd.setCursor(0, 0);
+                        lcd.print("Quantity Left:");
+                        lcd.setCursor(0, 1);
+                        lcd.print(writeByte[15]);
+                        delay(3000);
+                        lcd.clear();
+                        lcd.setCursor(0, 0);
+                        lcd.print("Receive Pad");
+                        lcd.setCursor(0, 1);
+                        lcd.print("Thank you!");
+                        delay(2000);
+                    }
+                }
+                else
+                {
+                    lcd.clear();
+                    lcd.setCursor(0, 0);
+                    lcd.print("Opps!");
+                    lcd.setCursor(0, 1);
+                    lcd.print("Zero Balance");
+                    delay(3000);
+                }
+            }
+            else
+            {
+                lcd.clear();
+                lcd.setCursor(0, 0);
+                lcd.print("Failed!");
+                lcd.setCursor(0, 1);
+                lcd.print("Try Again");
+                delay(3000);
+            }
+        }
+    }
+    halt();
+}
 void menuManagement()
 {
     if (status == 'n')
@@ -112,7 +218,8 @@ void menuManagement()
                         manageRack1();
                     }
                 }
-                while (!digitalRead(okButton));
+                while (!digitalRead(okButton))
+                    ;
                 manageRack2();
                 while (digitalRead(okButton))
                 {
@@ -123,7 +230,8 @@ void menuManagement()
                         manageRack2();
                     }
                 }
-                while (!digitalRead(okButton));
+                while (!digitalRead(okButton))
+                    ;
                 manageRack3();
                 while (digitalRead(okButton))
                 {
@@ -134,7 +242,8 @@ void menuManagement()
                         manageRack3();
                     }
                 }
-                while (!digitalRead(okButton));
+                while (!digitalRead(okButton))
+                    ;
                 manageRack4();
                 while (digitalRead(okButton))
                 {
@@ -145,7 +254,8 @@ void menuManagement()
                         manageRack4();
                     }
                 }
-                while (!digitalRead(okButton));
+                while (!digitalRead(okButton))
+                    ;
                 manageRack5();
                 while (digitalRead(okButton))
                 {
@@ -346,4 +456,63 @@ void writeIntIntoEEPROM(int address, int number)
 int readIntFromEEPROM(int address)
 {
     return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
+}
+
+bool readCard()
+{
+    byte buffersize = 18;
+    if (auth_A())
+    {
+        rfidstatus = (MFRC522::StatusCode)mfrc522.MIFARE_Read(blockAddr, readByte, &buffersize);
+        if (rfidstatus != MFRC522::STATUS_OK)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+bool writeCard()
+{
+    if (auth_B())
+    {
+        rfidstatus = (MFRC522::StatusCode)mfrc522.MIFARE_Write(blockAddr, writeByte, 16);
+        if (rfidstatus != MFRC522::STATUS_OK)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void dumpToWriteVar(byte *buffer, byte bufferSize)
+{
+    for (byte i = 0; i < bufferSize; i++)
+    {
+        Serial.print(buffer[i]);
+        writeByte[i] = buffer[i];
+    }
+    writeByte[15]--;
+}
+void halt()
+{
+    mfrc522.PICC_HaltA();      // Halt PICC
+    mfrc522.PCD_StopCrypto1(); // Stop encryption on PCD
+}
+bool auth_A()
+{
+    rfidstatus = (MFRC522::StatusCode)mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, authAddr, &key, &(mfrc522.uid));
+    if (rfidstatus != MFRC522::STATUS_OK)
+    {
+        return false;
+    }
+    return true;
+}
+bool auth_B()
+{
+    rfidstatus = (MFRC522::StatusCode)mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, authAddr, &key, &(mfrc522.uid));
+    if (rfidstatus != MFRC522::STATUS_OK)
+    {
+        return false;
+    }
+    return true;
 }
