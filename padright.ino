@@ -33,6 +33,7 @@ padrack rack1, rack2, rack3, rack4, rack5;
 
 bool change = false;
 bool isUpdate = false;
+bool changeDone = true;
 byte menuButton = 3;
 byte selectButton = 4;
 byte okButton = 5;
@@ -79,17 +80,24 @@ void setup()
 void startMessage()
 {
     lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Powered By ");
-    lcd.setCursor(0, 1);
+    lcd.setCursor(3, 0);
+    lcd.print("Powered By");
+    lcd.setCursor(2, 1);
     lcd.print("Kaicho Group");
     delay(3000);
-     lcd.clear();
-    lcd.setCursor(4, 0);
+    lcd.clear();
+    lcd.setCursor(6, 0);
     lcd.print("RED");
-    lcd.setCursor(3, 1);
+    lcd.setCursor(5, 1);
     lcd.print("INT'L");
     delay(5000);
+    lcd.clear();
+    lcd.setCursor(2, 0);
+    lcd.print("Kaicho");
+    lcd.setCursor(2, 1);
+    lcd.print("Pad Vending");
+    delay(2000);
+    homePage2();
 }
 void loop()
 {
@@ -158,12 +166,14 @@ void manageRFID()
                 delay(3000);
             }
         }
+        halt();
+        status = 'n';
+        changeDone = true;
     }
-    halt();
 }
 void menuManagement()
 {
-    if (status == 'n')
+    if (status == 'n' || status == 'a')
     {
         if (!digitalRead(menuButton))
         {
@@ -172,6 +182,7 @@ void menuManagement()
             if (state == 2)
                 state = 0;
             makeChange = true;
+            changeDone = true;
         }
         else if (!digitalRead(selectButton))
         {
@@ -180,6 +191,7 @@ void menuManagement()
             if (topMenuPosition == 2)
                 topMenuPosition = 0;
             makeChange = true;
+            changeDone = true;
         }
         if (!digitalRead(okButton) && state == 1)
         {
@@ -188,7 +200,7 @@ void menuManagement()
                 status = 'r';
             else if (state == 1 && topMenuPosition == 1)
                 status = 'm';
-            Serial.println(status);
+            // Serial.println(status);
             switch (status)
             {
             case 'm':
@@ -270,6 +282,7 @@ void menuManagement()
             }
             writeToEPPROM(status);
             save();
+            changeDone = true;
         }
     }
 
@@ -277,43 +290,56 @@ void menuManagement()
     makeChange = false;
 }
 
-void homePage()
+// void homePage()
+// {
+//     if (!isUpdate)
+//     {
+//         isUpdate = true;
+//         if (!change)
+//         {
+//             lcd.clear();
+//             lcd.setCursor(6, 0);
+//             lcd.print("Scan");
+//             lcd.setCursor(4, 1);
+//             lcd.print("Card Here");
+//         }
+//         else
+//         {
+//             lcd.clear();
+//             lcd.setCursor(0, 0);
+//             lcd.print("R 1  2  3  4  5");
+//             lcd.setCursor(0, 1);
+//             lcd.print("Q");
+//             lcd.setCursor(2, 1);
+//             lcd.print(rack1.getQuantity());
+//             lcd.setCursor(5, 1);
+//             lcd.print(rack2.getQuantity());
+//             lcd.setCursor(8, 1);
+//             lcd.print(rack3.getQuantity());
+//             lcd.setCursor(11, 1);
+//             lcd.print(rack4.getQuantity());
+//             lcd.setCursor(14, 1);
+//             lcd.print(rack5.getQuantity());
+//         }
+//     }
+//     if (millis() - previousTime >= 5000)
+//     {
+//         change = !change;
+//         previousTime = millis();
+//         isUpdate = false;
+//     }
+// }
+void homePage2()
 {
-    if (!isUpdate)
+    if (changeDone == true)
     {
-        isUpdate = true;
-        if (!change)
-        {
-            lcd.clear();
-            lcd.setCursor(2, 0);
-            lcd.print("Kaicho");
-            lcd.setCursor(2, 1);
-            lcd.print("Pad Vending");
-        }
-        else
-        {
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print("R 1  2  3  4  5");
-            lcd.setCursor(0, 1);
-            lcd.print("Q");
-            lcd.setCursor(2, 1);
-            lcd.print(rack1.getQuantity());
-            lcd.setCursor(5, 1);
-            lcd.print(rack2.getQuantity());
-            lcd.setCursor(8, 1);
-            lcd.print(rack3.getQuantity());
-            lcd.setCursor(11, 1);
-            lcd.print(rack4.getQuantity());
-            lcd.setCursor(14, 1);
-            lcd.print(rack5.getQuantity());
-        }
-    }
-    if (millis() - previousTime >= 5000)
-    {
-        change = !change;
-        previousTime = millis();
-        isUpdate = false;
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("SCAN CARD HERE");
+        lcd.setCursor(0, 1);
+        lcd.print("N0 OF STOCKS:");
+        lcd.print(rack1.getQuantity() + rack2.getQuantity() + rack3.getQuantity() + rack4.getQuantity() + rack5.getQuantity());
+        changeDone = false;
     }
 }
 void topMenu()
@@ -345,8 +371,9 @@ void menu()
     switch (state)
     {
     case 0:
-        homePage();
+        homePage2();
         topMenuPosition = 0;
+        status = 'a';
         break;
     case 1:
         if (makeChange)
