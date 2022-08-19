@@ -12,33 +12,38 @@ MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 
 MFRC522::MIFARE_Key key;
 MFRC522::StatusCode rfidstatus;
-// regarding rdid card
+// regarding rfid card
 int blockAddr = 2;
 byte readByte[18];
 byte writeByte[16];
 int authAddr = 3;
 byte byteSize = sizeof(readByte);
-//
-// ADDRESS FOR menu VARIABLES
+
+// --------- eeprom address for menu variables ---------
 static byte rack1Address = 1;
 static byte rack2Address = 2;
 static byte rack3Address = 3;
 static byte rack4Address = 4;
 static byte rack5Address = 5;
 static byte motorTimeAddress = 10;
-//---------------------------------
+//----------- class objects ---------------------
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 padrack rack1, rack2, rack3, rack4, rack5;
-
+//-------------------- input and output varaibles --------------
+byte motor1 = 6;
+byte motor2 = 7;
+byte motor3 = 8;
+byte motor4 = 14;
+byte motor5 = 15;
+byte menuButton = 2;
+byte selectButton = 3;
+byte okButton = 4;
+byte buzzer = 5;
+////----------- logic variables -------------
 bool change = false;
 bool isUpdate = false;
 bool changeDone = true;
-byte menuButton = 3;
-byte selectButton = 4;
-byte okButton = 5;
-byte buzzer = 7;
-
 int motorTimeVariable = 100;
 uint32_t previousTime = millis();
 int topMenuPosition = 0;
@@ -117,7 +122,7 @@ void manageRFID()
         {
             if (readCard())
             {
-                if (readByte[15] != 0 && readByte[0] == 107)
+                if (readByte[15] != 0 && readByte[0] == 107) // verify the card and available quantity on card
                 {
                     dumpToWriteVar(readByte, 16);
                     if (!writeCard())
@@ -131,19 +136,32 @@ void manageRFID()
                     }
                     else
                     {
-                        delay(500);
-                        lcd.clear();
-                        lcd.setCursor(0, 0);
-                        lcd.print("Quantity Left:");
-                        lcd.setCursor(0, 1);
-                        lcd.print(writeByte[15]);
-                        delay(3000);
-                        lcd.clear();
-                        lcd.setCursor(0, 0);
-                        lcd.print("Receive Pad");
-                        lcd.setCursor(0, 1);
-                        lcd.print("Thank you!");
-                        delay(2000);
+                        if (getStock() != 0) // check the stock before proceeding
+                        {
+                            delay(500);
+                            lcd.clear();
+                            lcd.setCursor(0, 0);
+                            lcd.print("Left for Card:");
+                            lcd.setCursor(0, 1);
+                            lcd.print(writeByte[15]);
+                            delay(3000);
+                            lcd.clear();
+                            lcd.setCursor(0, 0);
+                            lcd.print("Receive Pad");
+                            lcd.setCursor(0, 1);
+                            lcd.print("Thank you!");
+                            delay(2000);
+                            runMotor();
+                        }
+                        else // print if no stock remaining
+                        {
+                            lcd.clear();
+                            lcd.setCursor(0, 0);
+                            lcd.print("Sorry");
+                            lcd.setCursor(0, 1);
+                            lcd.print("No Stocks");
+                            delay(2000);
+                        }
                     }
                 }
                 else
@@ -338,7 +356,7 @@ void homePage2()
         lcd.print("SCAN CARD HERE");
         lcd.setCursor(0, 1);
         lcd.print("N0 OF STOCKS:");
-        lcd.print(rack1.getQuantity() + rack2.getQuantity() + rack3.getQuantity() + rack4.getQuantity() + rack5.getQuantity());
+        lcd.print(getStock());
         changeDone = false;
     }
 }
@@ -542,4 +560,50 @@ bool auth_B()
         return false;
     }
     return true;
+}
+void runMotor()
+{
+    if (getStock() > 0)
+    {
+        if (rack1.getQuantity() != 0)
+        {
+            digitalWrite(motor1, HIGH);
+            delay(motorTimeVariable);
+            digitalWrite(motor1, LOW);
+            rack1.decQuantity();
+        }
+        else if (rack2.getQuantity() != 0)
+        {
+            digitalWrite(motor2, HIGH);
+            delay(motorTimeVariable);
+            digitalWrite(motor2, LOW);
+            rack2.decQuantity();
+        }
+        else if (rack3.getQuantity() != 0)
+        {
+            digitalWrite(motor3, HIGH);
+            delay(motorTimeVariable);
+            digitalWrite(motor3, LOW);
+            rack3.decQuantity();
+        }
+        else if (rack4.getQuantity() != 0)
+        {
+            digitalWrite(motor4, HIGH);
+            delay(motorTimeVariable);
+            digitalWrite(motor4, LOW);
+            rack4.decQuantity();
+        }
+        else if (rack5.getQuantity() != 0)
+        {
+            digitalWrite(motor5, HIGH);
+            delay(motorTimeVariable);
+            digitalWrite(motor5, LOW);
+            rack5.decQuantity();
+        }
+        writeToEPPROM('r');
+    }
+}
+int getStock()
+{
+    return rack1.getQuantity() + rack2.getQuantity() + rack3.getQuantity() + rack4.getQuantity() + rack5.getQuantity();
 }
