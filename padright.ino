@@ -132,7 +132,7 @@ void manageRFID()
                         lcd.print("Failed!");
                         lcd.setCursor(0, 1);
                         lcd.print("Try Again");
-                        delay(3000);
+                        warning();
                     }
                     else
                     {
@@ -150,7 +150,8 @@ void manageRFID()
                             lcd.print("Receive Pad");
                             lcd.setCursor(0, 1);
                             lcd.print("Thank you!");
-                            delay(2000);
+                            success();
+                            delay(1000);                            
                             runMotor();
                         }
                         else // print if no stock remaining
@@ -160,7 +161,7 @@ void manageRFID()
                             lcd.print("Sorry");
                             lcd.setCursor(0, 1);
                             lcd.print("No Stocks");
-                            delay(2000);
+                            warning();
                         }
                     }
                 }
@@ -171,7 +172,7 @@ void manageRFID()
                     lcd.print("Opps!");
                     lcd.setCursor(0, 1);
                     lcd.print("Zero Balance");
-                    delay(3000);
+                    warning();
                 }
             }
             else
@@ -181,7 +182,8 @@ void manageRFID()
                 lcd.print("Failed!");
                 lcd.setCursor(0, 1);
                 lcd.print("Try Again");
-                delay(3000);
+                warning();
+
             }
         }
         halt();
@@ -299,6 +301,7 @@ void menuManagement()
                 break;
             }
             writeToEPPROM(status);
+            success();
             save();
             changeDone = true;
         }
@@ -606,4 +609,24 @@ void runMotor()
 int getStock()
 {
     return rack1.getQuantity() + rack2.getQuantity() + rack3.getQuantity() + rack4.getQuantity() + rack5.getQuantity();
+}
+void success()
+{
+    digitalWrite(buzzer, HIGH);
+    delay(1000);
+    digitalWrite(buzzer, LOW);
+}
+void warning()
+{
+    digitalWrite(buzzer, HIGH);
+    delay(4000);
+    digitalWrite(buzzer, LOW);
+    delay(4000);
+    digitalWrite(buzzer, HIGH);
+    delay(4000);
+    digitalWrite(buzzer, LOW);
+    delay(4000);
+    digitalWrite(buzzer, HIGH);
+    delay(4000);
+    digitalWrite(buzzer, LOW);
 }
