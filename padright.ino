@@ -44,6 +44,7 @@ byte buzzer = 5;
 bool change = false;
 bool isUpdate = false;
 bool changeDone = true;
+byte maxRackCapacity = 40;
 int motorTimeVariable = 100;
 uint32_t previousTime = millis();
 int topMenuPosition = 0;
@@ -151,7 +152,7 @@ void manageRFID()
                             lcd.setCursor(0, 1);
                             lcd.print("Thank you!");
                             success();
-                            delay(1000);                            
+                            delay(1000);
                             runMotor();
                         }
                         else // print if no stock remaining
@@ -183,7 +184,6 @@ void manageRFID()
                 lcd.setCursor(0, 1);
                 lcd.print("Try Again");
                 warning();
-
             }
         }
         halt();
@@ -208,7 +208,7 @@ void menuManagement()
         {
             delay(300);
             topMenuPosition++;
-            if (topMenuPosition == 2)
+            if (topMenuPosition == 3)
                 topMenuPosition = 0;
             makeChange = true;
             changeDone = true;
@@ -219,15 +219,34 @@ void menuManagement()
             if (state == 1 && topMenuPosition == 0)
                 status = 'r';
             else if (state == 1 && topMenuPosition == 1)
+                status = 'f';
+            else if (state == 1 && topMenuPosition == 2)
                 status = 'm';
             // Serial.println(status);
             switch (status)
             {
+            case 'f':
+                fillMenu();
+                while (digitalRead(okButton))
+                {
+                    // delay(300);
+                     if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        maxRackCapacity = maxRackCapacity + 1;
+                        if (maxRackCapacity > 60)
+                            maxRackCapacity = 1;
+                        fillMenu();
+                    }
+
+                }
+                fillAll(maxRackCapacity);
+                break;
             case 'm':
                 motorTime();
                 while (digitalRead(okButton))
                 {
-                    delay(300);
+                    // delay(300);
                     if (!digitalRead(selectButton))
                     {
                         delay(300);
@@ -374,12 +393,21 @@ void topMenu()
         lcd.setCursor(3, 0);
         lcd.print("Rack Quantity");
         lcd.setCursor(3, 1);
-        lcd.print("Motor Time");
+        lcd.print("Fill All Rack");
         break;
     case 1:
         lcd.clear();
         lcd.setCursor(3, 0);
         lcd.print("Rack Quantity");
+        lcd.setCursor(0, 1);
+        lcd.write((byte)0);
+        lcd.setCursor(3, 1);
+        lcd.print("Fill All Rack");
+        break;
+    case 2:
+        lcd.clear();
+        lcd.setCursor(3, 0);
+        lcd.print("Fill All Rack");
         lcd.setCursor(0, 1);
         lcd.write((byte)0);
         lcd.setCursor(3, 1);
@@ -471,7 +499,7 @@ void save()
 void writeToEPPROM(char status)
 {
 
-    if (status == 'r')
+    if (status == 'r' || status == 'f')
     {
         EEPROM.write(rack1Address, rack1.getQuantity());
         EEPROM.write(rack2Address, rack2.getQuantity());
@@ -605,6 +633,21 @@ void runMotor()
         }
         writeToEPPROM('r');
     }
+}
+void fillAll(int num){
+    rack1.setQuantity(num);
+    rack2.setQuantity(num);
+    rack3.setQuantity(num);
+    rack4.setQuantity(num);
+    rack5.setQuantity(num);
+}
+void fillMenu(){
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Enter capacity");
+    lcd.setCursor(0,1);
+    lcd.print("of one Rack:");
+    lcd.print(maxRackCapacity);
 }
 int getStock()
 {
