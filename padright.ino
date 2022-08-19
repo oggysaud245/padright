@@ -52,6 +52,11 @@ void setup()
 }
 void loop()
 {
+    menuManagement();
+}
+
+void menuManagement()
+{
     if (status == 'n')
     {
         if (!digitalRead(menuButton))
@@ -84,6 +89,7 @@ void loop()
                 motorTime();
                 while (digitalRead(okButton))
                 {
+                    delay(300);
                     if (!digitalRead(selectButton))
                     {
                         delay(300);
@@ -93,13 +99,12 @@ void loop()
                         motorTime();
                     }
                 }
-                writeToEPPROM(state);
-                save();
                 break;
             case 'r':
                 manageRack1();
                 while (digitalRead(okButton))
                 {
+                    // delay(300);
                     if (!digitalRead(selectButton))
                     {
                         delay(300);
@@ -107,6 +112,7 @@ void loop()
                         manageRack1();
                     }
                 }
+                while (!digitalRead(okButton));
                 manageRack2();
                 while (digitalRead(okButton))
                 {
@@ -117,6 +123,7 @@ void loop()
                         manageRack2();
                     }
                 }
+                while (!digitalRead(okButton));
                 manageRack3();
                 while (digitalRead(okButton))
                 {
@@ -127,6 +134,7 @@ void loop()
                         manageRack3();
                     }
                 }
+                while (!digitalRead(okButton));
                 manageRack4();
                 while (digitalRead(okButton))
                 {
@@ -137,6 +145,7 @@ void loop()
                         manageRack4();
                     }
                 }
+                while (!digitalRead(okButton));
                 manageRack5();
                 while (digitalRead(okButton))
                 {
@@ -147,10 +156,10 @@ void loop()
                         manageRack5();
                     }
                 }
-                writeToEPPROM(state);
-                save();
                 break;
             }
+            writeToEPPROM(status);
+            save();
         }
     }
 
@@ -301,10 +310,10 @@ void save()
     status = 'n';
     state = 0;
 }
-void writeToEPPROM(char state)
+void writeToEPPROM(char status)
 {
 
-    if (state == 'r')
+    if (status == 'r')
     {
         EEPROM.write(rack1Address, rack1.getQuantity());
         EEPROM.write(rack2Address, rack2.getQuantity());
@@ -312,7 +321,7 @@ void writeToEPPROM(char state)
         EEPROM.write(rack4Address, rack4.getQuantity());
         EEPROM.write(rack5Address, rack5.getQuantity());
     }
-    else if (state = 'm')
+    else if (status == 'm')
     {
         writeIntIntoEEPROM(motorTimeAddress, motorTimeVariable);
     }
