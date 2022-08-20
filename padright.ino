@@ -31,15 +31,15 @@ static byte motorTimeAddress = 10;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 padrack rack1, rack2, rack3, rack4, rack5;
 //-------------------- input and output varaibles --------------
-byte motor1 = 6;
-byte motor2 = 7;
-byte motor3 = 8;
-byte motor4 = 14;
-byte motor5 = 15;
-byte menuButton = 2;
-byte selectButton = 3;
-byte okButton = 4;
-byte buzzer = 5;
+byte motor1 = 5;
+byte motor2 = 13;
+byte motor3 = 14;
+byte motor4 = 15;
+byte motor5 = 16;
+byte menuButton = 6;
+byte selectButton = 7;
+byte okButton = 8;
+byte buzzer = 4;
 ////----------- logic variables -------------
 bool change = false;
 bool isUpdate = false;
