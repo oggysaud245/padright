@@ -32,10 +32,10 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 padrack rack1, rack2, rack3, rack4, rack5;
 //-------------------- input and output varaibles --------------
 byte motor1 = 5;
-byte motor2 = 13;
-byte motor3 = 14;
-byte motor4 = 15;
-byte motor5 = 16;
+byte motor2 = 14;
+byte motor3 = 15;
+byte motor4 = 16;
+byte motor5 = 17;
 byte menuButton = 6;
 byte selectButton = 7;
 byte okButton = 8;
