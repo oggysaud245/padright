@@ -74,6 +74,11 @@ void setup()
     pinMode(okButton, INPUT_PULLUP);
     pinMode(buzzer, OUTPUT);
     digitalWrite(buzzer, LOW);
+    pinMode(motor1, OUTPUT);
+    pinMode(motor2, OUTPUT);
+    pinMode(motor3, OUTPUT);
+    pinMode(motor4, OUTPUT);
+    pinMode(motor5, OUTPUT);
     readFromEEPROM();
 
     // key for auth rfid
