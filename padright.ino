@@ -63,7 +63,7 @@ byte arrow[8] = {
 
 void setup()
 {
-    Serial.begin(9600);
+    // Serial.begin(9600);
     lcd.init(); // initialize the lcd
     lcd.backlight();
     lcd.createChar(0, arrow);
@@ -128,6 +128,7 @@ void manageRFID()
         {
             if (readCard())
             {
+                success(500);
                 if (readByte[15] != 0 && readByte[0] == 107) // verify the card and available quantity on card
                 {
                     dumpToWriteVar(readByte, 16);
@@ -156,7 +157,7 @@ void manageRFID()
                             lcd.print("Receive Pad");
                             lcd.setCursor(0, 1);
                             lcd.print("Thank you!");
-                            success();
+                            success(800);
                             delay(1000);
                             runMotor();
                         }
@@ -325,7 +326,7 @@ void menuManagement()
                 break;
             }
             writeToEPPROM(status);
-            success();
+            success(800);
             save();
             changeDone = true;
         }
@@ -569,7 +570,7 @@ void dumpToWriteVar(byte *buffer, byte bufferSize)
 {
     for (byte i = 0; i < bufferSize; i++)
     {
-        Serial.print(buffer[i]);
+        // Serial.print(buffer[i]);
         writeByte[i] = buffer[i];
     }
     writeByte[15]--;
@@ -658,23 +659,23 @@ int getStock()
 {
     return rack1.getQuantity() + rack2.getQuantity() + rack3.getQuantity() + rack4.getQuantity() + rack5.getQuantity();
 }
-void success()
+void success(int _time)
 {
     digitalWrite(buzzer, HIGH);
-    delay(1000);
+    delay(_time);
     digitalWrite(buzzer, LOW);
 }
 void warning()
 {
     digitalWrite(buzzer, HIGH);
-    delay(4000);
+    delay(400);
     digitalWrite(buzzer, LOW);
-    delay(4000);
+    delay(400);
     digitalWrite(buzzer, HIGH);
-    delay(4000);
+    delay(400);
     digitalWrite(buzzer, LOW);
-    delay(4000);
+    delay(400);
     digitalWrite(buzzer, HIGH);
-    delay(4000);
+    delay(400);
     digitalWrite(buzzer, LOW);
 }
