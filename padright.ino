@@ -15,9 +15,13 @@ MFRC522::StatusCode rfidstatus;
 // regarding rfid card
 int blockAddr = 2;
 byte readByte[18];
+byte readByte2[18];
 byte writeByte[16];
 int authAddr = 3;
 byte byteSize = sizeof(readByte);
+//-------------- batch Write -----------------
+// Variable  for pad amount
+byte padAmount = 1;
 
 // --------- eeprom address for menu variables ---------
 static byte rack1Address = 1;
@@ -63,7 +67,7 @@ byte arrow[8] = {
 
 void setup()
 {
-    // Serial.begin(9600);
+    //    Serial.begin(9600);
     lcd.init(); // initialize the lcd
     lcd.backlight();
     lcd.createChar(0, arrow);
@@ -119,6 +123,7 @@ void manageRFID()
 {
     if (mfrc522.PICC_IsNewCardPresent())
     {
+
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Card Detected!");
@@ -132,7 +137,7 @@ void manageRFID()
                 if (readByte[15] != 0 && readByte[0] == 107) // verify the card and available quantity on card
                 {
                     dumpToWriteVar(readByte, 16);
-                    if (!writeCard())
+                    if (!writeCard(writeByte))
                     {
                         lcd.clear();
                         lcd.setCursor(0, 0);
@@ -143,7 +148,9 @@ void manageRFID()
                     }
                     else
                     {
-                        if (getStock() != 0) // check the stock before proceeding
+                        byte lastData = readByte[15];
+                        readCard();
+                        if (getStock() != 0 && lastData - readByte[15] >= 1) // check the stock before proceeding
                         {
                             delay(500);
                             lcd.clear();
@@ -214,7 +221,7 @@ void menuManagement()
         {
             delay(300);
             topMenuPosition++;
-            if (topMenuPosition == 3)
+            if (topMenuPosition == 4)
                 topMenuPosition = 0;
             makeChange = true;
             changeDone = true;
@@ -228,6 +235,8 @@ void menuManagement()
                 status = 'f';
             else if (state == 1 && topMenuPosition == 2)
                 status = 'm';
+            else if (state == 1 && topMenuPosition == 3)
+                status = 'b';
             // Serial.println(status);
             switch (status)
             {
@@ -236,7 +245,7 @@ void menuManagement()
                 while (digitalRead(okButton))
                 {
                     // delay(300);
-                     if (!digitalRead(selectButton))
+                    if (!digitalRead(selectButton))
                     {
                         delay(300);
                         maxRackCapacity = maxRackCapacity + 1;
@@ -244,7 +253,6 @@ void menuManagement()
                             maxRackCapacity = 1;
                         fillMenu();
                     }
-
                 }
                 fillAll(maxRackCapacity);
                 break;
@@ -323,6 +331,48 @@ void menuManagement()
                         manageRack5();
                     }
                 }
+                break;
+            case 'b':
+                batchWrite();
+                while (digitalRead(okButton))
+                {
+                    if (!digitalRead(selectButton))
+                    {
+                        delay(300);
+                        padAmountInc();
+                        batchWrite();
+                    }
+                }
+                while (!digitalRead(okButton))
+                    ;
+                lcd.clear();
+                lcd.setCursor(0, 0);
+                lcd.print("Scan Card!");
+                while (digitalRead(okButton))
+                {
+                    if (mfrc522.PICC_IsNewCardPresent())
+                    {
+                        if (mfrc522.PICC_ReadCardSerial())
+                        {
+                            // writeByte[0] = 107;
+                            writeByte[15] = padAmount;
+                            if (writeCard(writeByte))
+                            {
+                                lcd.setCursor(0, 1);
+                                lcd.print("Done");
+                                success(500);
+                            }
+                        }
+                        lcd.clear();
+                        lcd.setCursor(0, 0);
+                        lcd.print("Scan Card!");
+                        halt();
+                    }
+                }
+                // halt();
+                while (!digitalRead(okButton))
+                    ;
+                /////   batch code
                 break;
             }
             writeToEPPROM(status);
@@ -419,6 +469,15 @@ void topMenu()
         lcd.setCursor(3, 1);
         lcd.print("Motor Time");
         break;
+    case 3:
+        lcd.clear();
+        lcd.setCursor(3, 0);
+        lcd.print("Motor Time");
+        lcd.setCursor(0, 1);
+        lcd.write((byte)0);
+        lcd.setCursor(3, 1);
+        lcd.print("Batch Write");
+        break;
     }
 }
 void menu()
@@ -437,6 +496,16 @@ void menu()
         break;
     }
 }
+void batchWrite()
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Pad Amount");
+    lcd.setCursor(0, 1);
+    // enter number
+    lcd.print(padAmount);
+}
+
 void manageRack1()
 {
     lcd.clear();
@@ -553,7 +622,7 @@ bool readCard()
     }
     return true;
 }
-bool writeCard()
+bool writeCard(byte writeByte[])
 {
     if (auth_B())
     {
@@ -640,18 +709,20 @@ void runMotor()
         writeToEPPROM('r');
     }
 }
-void fillAll(int num){
+void fillAll(int num)
+{
     rack1.setQuantity(num);
     rack2.setQuantity(num);
     rack3.setQuantity(num);
     rack4.setQuantity(num);
     rack5.setQuantity(num);
 }
-void fillMenu(){
+void fillMenu()
+{
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
     lcd.print("Enter capacity");
-    lcd.setCursor(0,1);
+    lcd.setCursor(0, 1);
     lcd.print("of one Rack:");
     lcd.print(maxRackCapacity);
 }
@@ -678,4 +749,12 @@ void warning()
     digitalWrite(buzzer, HIGH);
     delay(400);
     digitalWrite(buzzer, LOW);
+}
+void padAmountInc()
+{
+    padAmount++;
+    if (padAmount > 20)
+    {
+        padAmount = 1;
+    }
 }
